@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pen Ink Pixel Segmentation for Forensic Applications</title>
+    <style>
+        :root {
+            --primary-color: #007bff;
+            --primary-dark: #0056b3;
+            --success-color: #d4edda;
+            --success-border: #c3e6cb;
+            --success-text: #155724;
+            --error-color: #f8d7da;
+            --error-border: #f5c6cb;
+            --error-text: #721c24;
+            --light-bg: #f8f9fa;
+            --shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+            line-height: 1.6;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .upload-section {
+            border: 2px dashed #ccc;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 30px;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+        .upload-section.dragover {
+            border-color: var(--primary-color);
+            background-color: var(--light-bg);
+        }
+        .btn {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            transition: background-color 0.3s;
+            font-size: 14px;
+        }
+        .btn:hover {
+            background-color: var(--primary-dark);
+        }
+        .btn:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+        }
+        .btn-secondary:hover {
+            background-color: #545b62;
+        }
+        .btn-success {
+            background-color: #28a745;
+        }
+        .btn-success:hover {
+            background-color: #218838;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+        .success {
+            background-color: var(--success-color);
+            border: 1px solid var(--success-border);
+            color: var(--success-text);
+        }
+        .error {
+            background-color: var(--error-color);
+            border: 1px solid var(--error-border);
+            color: var(--error-text);
+        }
+        .file-info {
+            margin: 15px 0;
+            padding: 10px;
+            background-color: var(--light-bg);
+            border-radius: 5px;
+            text-align: left;
+        }
+        .progress {
+            width: 100%;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+            margin: 10px 0;
+            display: none;
+        }
+        .progress-bar {
+            width: 0%;
+            height: 20px;
+            background-color: var(--primary-color);
+            border-radius: 5px;
+            transition: width 0.3s;
+        }
+        .file-item {
+            margin: 10px 0;
+            padding: 10px;
+            background: var(--light-bg);
+            border-radius: 3px;
+            text-align: left;
+        }
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+        }
+        .footer p {
+            margin: 5px 0;
+        }
+        .file-input-label {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: var(--light-bg);
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            transition: all 0.3s;
+        }
+        .file-input-label:hover {
+            background-color: #e9ecef;
+        }
+        .hidden {
+            display: none;
+        }
+        .status-message {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .status-info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .status-error {
+            background-color: var(--error-color);
+            border: 1px solid var(--error-border);
+            color: var(--error-text);
+        }
+        .text-preview {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🖼️ Pen Ink Pixel Segmentation OCR</h1>
+        <p class="subtitle">Forensic Image Enhancement & Text Recognition</p>
+        
+        <!-- Single File Upload -->
+        <!-- <div class="upload-section" id="singleUpload">
+            <h3>Single File Upload</h3>
+            <p>Upload and process one image at a time.</p>
+            <label for="singleFile" class="file-input-label">Choose File</label>
+            <input type="file" id="singleFile" accept=".tif,.tiff,.png,.jpg,.jpeg,.bmp" class="hidden">
+            <button class="btn" id="processSingle">Process</button>
+            <div class="file-info" id="fileInfo"></div>
+        </div> -->
+
+        <!-- Batch File Upload -->
+        <div class="upload-section" id="batchUpload">
+            <h3>Batch File Upload</h3>
+            <p>Upload and process multiple images at once.</p>
+            <label for="batchFiles" class="file-input-label">Choose Files</label>
+            <input type="file" id="batchFiles" multiple accept=".tif,.tiff,.png,.jpg,.jpeg,.bmp" class="hidden">
+            <button class="btn" id="processBatch">Process All</button>
+            <div class="file-info" id="batchFileInfo"></div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="progress" id="progress">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+
+        <!-- Status Message -->
+        <div class="status-message hidden" id="statusMessage"></div>
+
+        <!-- Results -->
+        <div class="result" id="result"></div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p><strong>Developed by:</strong> Prashant Kumar, Aryan Rishi Champi, Chinnayee Mishra, K. Rajalakshmi Subudhi</p>
+            <p><strong>Guided by:</strong> Dr. Prabhat Dansena</p>
+        </div>
+    </div>
+
+    <script>
+        // API endpoints configuration
+        const API_ENDPOINTS = {
+            upload: '/upload',
+            batchUpload: '/batch_upload',
+            download: '/download',
+            health: '/health'
+        };
+
+        // Single file processing
+        document.getElementById('singleFile').addEventListener('change', function(e) {
+            if (this.files.length > 0) {
+                document.getElementById('fileInfo').innerHTML = `
+                    <strong>Selected:</strong> ${this.files[0].name}<br>
+                    <small>Size: ${formatFileSize(this.files[0].size)} • Type: ${this.files[0].type || 'Unknown'}</small>
+                `;
+            }
+        });
+
+        document.getElementById('processSingle').addEventListener('click', function() {
+            const fileInput = document.getElementById('singleFile');
+            if (fileInput.files.length === 0) {
+                showStatusMessage('Please select a file first', 'error');
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            if (!validateFile(file)) {
+                showStatusMessage('Invalid file type. Please select an image file.', 'error');
+                return;
+            }
+            
+            processFile(file);
+        });
+
+        // Batch file processing
+        document.getElementById('batchFiles').addEventListener('change', function(e) {
+            if (this.files.length > 0) {
+                const fileList = Array.from(this.files).slice(0, 5).map(f => 
+                    `<div class="file-item">
+                        <strong>${f.name}</strong><br>
+                        <small>Size: ${formatFileSize(f.size)} • Type: ${f.type || 'Unknown'}</small>
+                    </div>`
+                ).join('');
+                
+                const additionalFiles = this.files.length > 5 ? 
+                    `<div class="file-item">... and ${this.files.length - 5} more files</div>` : '';
+                
+                document.getElementById('batchFileInfo').innerHTML = 
+                    `<strong>Selected ${this.files.length} files:</strong>${fileList}${additionalFiles}`;
+            }
+        });
+
+        document.getElementById('processBatch').addEventListener('click', function() {
+            const fileInput = document.getElementById('batchFiles');
+            if (fileInput.files.length === 0) {
+                showStatusMessage('Please select files first', 'error');
+                return;
+            }
+            
+            // Validate all files
+            const invalidFiles = Array.from(fileInput.files).filter(file => !validateFile(file));
+            if (invalidFiles.length > 0) {
+                showStatusMessage(`Invalid file type detected. Please select only image files.`, 'error');
+                return;
+            }
+            
+            processBatchFiles(fileInput.files);
+        });
+
+        // Drag and drop functionality
+        const uploadSections = document.querySelectorAll('.upload-section');
+        uploadSections.forEach(section => {
+            section.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.classList.add('dragover');
+            });
+
+            section.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                this.classList.remove('dragover');
+            });
+
+            section.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.classList.remove('dragover');
+                
+                const files = e.dataTransfer.files;
+                if (files.length === 0) return;
+                
+                if (this.id === 'singleUpload') {
+                    if (files.length > 1) {
+                        showStatusMessage('Please drop only one file for single upload', 'error');
+                        return;
+                    }
+                    const file = files[0];
+                    if (!validateFile(file)) {
+                        showStatusMessage('Invalid file type. Please select an image file.', 'error');
+                        return;
+                    }
+                    document.getElementById('singleFile').files = files;
+                    document.getElementById('fileInfo').innerHTML = `
+                        <strong>Selected:</strong> ${file.name}<br>
+                        <small>Size: ${formatFileSize(file.size)} • Type: ${file.type || 'Unknown'}</small>
+                    `;
+                } else if (this.id === 'batchUpload') {
+                    const validFiles = Array.from(files).filter(file => validateFile(file));
+                    if (validFiles.length !== files.length) {
+                        showStatusMessage('Some files were rejected due to invalid type', 'error');
+                    }
+                    
+                    // Create a new DataTransfer to set the files
+                    const dt = new DataTransfer();
+                    validFiles.forEach(file => dt.items.add(file));
+                    document.getElementById('batchFiles').files = dt.files;
+                    
+                    const fileList = Array.from(dt.files).slice(0, 5).map(f => 
+                        `<div class="file-item">
+                            <strong>${f.name}</strong><br>
+                            <small>Size: ${formatFileSize(f.size)} • Type: ${f.type || 'Unknown'}</small>
+                        </div>`
+                    ).join('');
+                    
+                    const additionalFiles = dt.files.length > 5 ? 
+                        `<div class="file-item">... and ${dt.files.length - 5} more files</div>` : '';
+                    
+                    document.getElementById('batchFileInfo').innerHTML = 
+                        `<strong>Selected ${dt.files.length} files:</strong>${fileList}${additionalFiles}`;
+                }
+            });
+        });
+
+        function validateFile(file) {
+            const allowedTypes = [
+                'image/tiff', 'image/tif', 'image/png', 'image/jpeg', 'image/jpg', 'image/bmp'
+            ];
+            const allowedExtensions = ['.tif', '.tiff', '.png', '.jpg', '.jpeg', '.bmp'];
+            
+            // Check file type
+            if (file.type && !allowedTypes.includes(file.type.toLowerCase())) {
+                return false;
+            }
+            
+            // Check file extension as fallback
+            const fileName = file.name.toLowerCase();
+            return allowedExtensions.some(ext => fileName.endsWith(ext));
+        }
+
+        function processFile(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            showProgress();
+            disableButtons();
+            showStatusMessage('Processing image...', 'info');
+            
+            // Real API call implementation
+            fetch(API_ENDPOINTS.upload, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                hideProgress();
+                enableButtons();
+                hideStatusMessage();
+                
+                if (data.success) {
+                    showResult(`
+                        <h3>✅ Processing Complete</h3>
+                        <div class="file-item">
+                            <strong>File:</strong> ${data.original_filename}<br>
+                            <strong>Confidence:</strong> ${data.confidence ? data.confidence.toFixed(1) + '%' : 'N/A'}
+                        </div>
+                        ${data.recognized_text ? `
+                        <div class="text-preview">
+                            <strong>Recognized Text:</strong><br>
+                            ${data.recognized_text}
+                        </div>
+                        ` : '<p><strong>Recognized Text:</strong> No text detected</p>'}
+                        <div style="margin-top: 15px;">
+                            <button class="btn btn-success" onclick="downloadProcessedFile('${data.processed_filename}')">Download Enhanced Image</button>
+                            <button class="btn btn-secondary" onclick="copyToClipboard('${data.recognized_text || ''}')">Copy Text</button>
+                        </div>
+                    `, 'success');
+                } else {
+                    showResult(`<h3>❌ Processing Failed</h3><p>${data.error || 'Unknown error occurred'}</p>`, 'error');
+                }
+            })
+            .catch(error => {
+                hideProgress();
+                enableButtons();
+                hideStatusMessage();
+                showResult(`<h3>❌ Network Error</h3><p>${error.message || 'Failed to connect to server'}</p>`, 'error');
+                console.error('Processing error:', error);
+            });
+        }
+
+        function processBatchFiles(files) {
+            const formData = new FormData();
+            for (let i = 0; i < files.length; i++) {
+                formData.append('files', files[i]);
+            }
+
+            showProgress();
+            disableButtons();
+            showStatusMessage(`Processing ${files.length} files...`, 'info');
+            
+            fetch(API_ENDPOINTS.batchUpload, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                hideProgress();
+                enableButtons();
+                hideStatusMessage();
+                
+                if (data.success) {
+                    let resultHTML = `
+                        <h3>✅ Batch Processing Complete</h3>
+                        <div class="file-item">
+                            <strong>Total Files:</strong> ${data.total_files}<br>
+                            <strong>Successful:</strong> ${data.successful_processing}<br>
+                            <strong>Failed:</strong> ${data.failed_processing}
+                        </div>
+                        <div style="max-height: 400px; overflow-y: auto; margin-top: 15px;">
+                            <h4>Detailed Results:</h4>
+                    `;
+                    
+                    data.results.forEach((result, index) => {
+                        if (result.success) {
+                            resultHTML += `
+                                <div class="file-item">
+                                    <strong>${result.original_filename}</strong><br>
+                                    Confidence: ${result.confidence ? result.confidence.toFixed(1) + '%' : 'N/A'}
+                                    <div style="margin-top: 10px;">
+                                        <button class="btn btn-success" onclick="downloadProcessedFile('${result.processed_filename}')" style="margin-right: 5px;">Download</button>
+                                        ${result.recognized_text ? `<button class="btn btn-secondary" onclick="copyToClipboard('${result.recognized_text}')">Copy Text</button>` : ''}
+                                    </div>
+                                    ${result.recognized_text ? `<div class="text-preview" style="margin-top: 5px; font-size: 0.9em;">${result.recognized_text}</div>` : ''}
+                                </div>
+                            `;
+                        } else {
+                            resultHTML += `
+                                <div class="file-item" style="background: #f8d7da;">
+                                    <strong>${result.original_filename}</strong><br>
+                                    Error: ${result.error || 'Unknown error'}
+                                </div>
+                            `;
+                        }
+                    });
+                    
+                    resultHTML += `</div>`;
+                    showResult(resultHTML, 'success');
+                } else {
+                    showResult(`<h3>❌ Batch Processing Failed</h3><p>${data.error || 'Unknown error occurred'}</p>`, 'error');
+                }
+            })
+            .catch(error => {
+                hideProgress();
+                enableButtons();
+                hideStatusMessage();
+                showResult(`<h3>❌ Network Error</h3><p>${error.message || 'Failed to connect to server'}</p>`, 'error');
+                console.error('Batch processing error:', error);
+            });
+        }
+
+        function downloadProcessedFile(filename) {
+            // Create a proper download link
+            const downloadUrl = `${API_ENDPOINTS.download}/${encodeURIComponent(filename)}`;
+            
+            // Create a temporary anchor element to trigger download
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            
+            // Fallback: open in new tab if download doesn't work
+            setTimeout(() => {
+                window.open(downloadUrl, '_blank');
+            }, 1000);
+        }
+
+        function copyToClipboard(text) {
+            if (!text || text.trim() === '') {
+                showStatusMessage('No text to copy', 'error');
+                return;
+            }
+            
+            navigator.clipboard.writeText(text).then(() => {
+                showStatusMessage('Text copied to clipboard!', 'info');
+                setTimeout(hideStatusMessage, 2000);
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+                showStatusMessage('Failed to copy text', 'error');
+            });
+        }
+
+        function showProgress() {
+            document.getElementById('progress').style.display = 'block';
+            document.getElementById('progressBar').style.width = '50%';
+        }
+
+        function hideProgress() {
+            document.getElementById('progressBar').style.width = '100%';
+            setTimeout(() => {
+                document.getElementById('progress').style.display = 'none';
+                document.getElementById('progressBar').style.width = '0%';
+            }, 500);
+        }
+
+        function disableButtons() {
+            document.getElementById('processSingle').disabled = true;
+            document.getElementById('processBatch').disabled = true;
+        }
+
+        function enableButtons() {
+            document.getElementById('processSingle').disabled = false;
+            document.getElementById('processBatch').disabled = false;
+        }
+
+        function showResult(content, type) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = content;
+            resultDiv.className = `result ${type}`;
+            resultDiv.style.display = 'block';
+            
+            // Scroll to results
+            resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function showStatusMessage(message, type) {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.textContent = message;
+            statusDiv.className = `status-message status-${type}`;
+            statusDiv.classList.remove('hidden');
+        }
+
+        function hideStatusMessage() {
+            document.getElementById('statusMessage').classList.add('hidden');
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // Test server connection on load
+        window.addEventListener('load', function() {
+            fetch(API_ENDPOINTS.health)
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Server health:', data);
+                    showStatusMessage('Server connected successfully', 'info');
+                    setTimeout(hideStatusMessage, 3000);
+                })
+                .catch(error => {
+                    console.error('Server connection failed:', error);
+                    showStatusMessage('Warning: Server connection failed. Some features may not work.', 'error');
+                });
+        });
+    </script>
+</body>
+</html>
